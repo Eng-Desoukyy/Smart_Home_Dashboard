@@ -154,7 +154,12 @@ if page == "🏠 Overview":
     if n_alerts == 0:
         st.success("✅ All systems normal — no active alerts")
     else:
-        st.warning(f"⚠️ {n_alerts:,} anomaly readings detected in selected period")
+        alert_pct = n_alerts / max(len(df_view), 1) * 100
+        st.warning(
+            f"⚠️ {n_alerts:,} anomaly readings detected in selected period "
+            f"({alert_pct:.1f}% of readings) — flagged by Isolation Forest at the 97th-percentile "
+            f"score threshold. Includes power spikes, outages, and unoccupied-on events."
+        )
 
     st.subheader("Key Performance Indicators")
     c1,c2,c3,c4,c5,c6 = st.columns(6)
@@ -166,7 +171,7 @@ if page == "🏠 Overview":
     avg_moist   = df_view["soil_moisture_pct"].mean()
 
     c1.metric("⚡ Total Energy",    f"{total_kwh:.1f} kWh")
-    c2.metric("♻️  Wasted Energy",  f"{waste_kwh:.1f} kWh",  f"{waste_kwh/max(total_kwh,1)*100:.1f}% of total")
+    c2.metric("♻️  Wasted Energy",  f"{waste_kwh:.1f} kWh",  f"↑ {waste_kwh/max(total_kwh,1)*100:.1f}% of total", delta_color="inverse")
     c3.metric("👤 Occupancy",       f"{occ_pct:.1f}%")
     c4.metric("🌡️  Avg Temp",       f"{avg_temp:.1f} °C")
     c5.metric("💧 Humidity",        f"{avg_humid:.0f}%")
@@ -373,8 +378,11 @@ elif page == "🚨 Anomaly Detection":
         fill="tozeroy", fillcolor="rgba(255,241,118,0.06)"), row=2, col=1)
     fig_sc.add_hline(y=GAS_THRESH, line_dash="dash", line_color="white",
                      annotation_text="Alert threshold", row=2, col=1)
+    # Invert Y-axes so anomaly spikes go UP (more intuitive for users)
+    fig_sc.update_yaxes(autorange="reversed", row=1, col=1)
+    fig_sc.update_yaxes(autorange="reversed", row=2, col=1)
     fig_sc.update_layout(**PLOTLY_LAYOUT, height=480,
-        title="Anomaly Scores Over Time (hourly max)")
+        title="Anomaly Scores Over Time — spikes indicate anomalies (hourly max)")
     st.plotly_chart(fig_sc, use_container_width=True)
 
     # Alert log table
@@ -385,12 +393,17 @@ elif page == "🚨 Anomaly Detection":
         lambda r: "🔴 Outage" if r["power_w"]<10
                   else "🟡 Waste" if r["occupancy"]==0
                   else "🟠 Fault", axis=1)
+    # Round power to 1 decimal (sensor accuracy is ±15W — 4 decimals is misleading)
+    alert_df["power_w"] = alert_df["power_w"].round(1)
+    alert_df["temperature_c"] = alert_df["temperature_c"].round(1)
+    # Rename with consistent Title Case and clear Score label
     alert_df = alert_df.rename(columns={
-        "power_w":"Power(W)","temperature_c":"Temp(C)",
-        "occupancy":"Occupied","power_anom_score":"Score","alert_type":"Type"
+        "power_w":"Power (W)","temperature_c":"Temp (°C)",
+        "occupancy":"Occupied","power_anom_score":"Anomaly Score","alert_type":"Type"
     })
-    alert_df["Score"] = alert_df["Score"].round(5)
+    alert_df["Anomaly Score"] = alert_df["Anomaly Score"].round(4)
     alert_df["Occupied"] = alert_df["Occupied"].map({0:"No",1:"Yes"})
+    st.caption("ℹ️ Anomaly Score: higher value = more anomalous. Threshold = 97th percentile of normal scores.")
     st.dataframe(alert_df.tail(100), use_container_width=True, height=280)
 
 # ════════════════════════════════════════════════════════════════════
@@ -422,7 +435,7 @@ elif page == "📈 Model Performance":
         {"Subsystem":"Energy Forecasting", "Model":"XGBoost",         "Metric":"R²",       "Value":f"{r2_xgb:.4f}"},
         {"Subsystem":"Occupancy Detection","Model":"Random Forest",   "Metric":"F1-Score", "Value":f"{f1_occ:.4f}"},
         {"Subsystem":"Occupancy Detection","Model":"Random Forest",   "Metric":"ROC-AUC",  "Value":f"{auc_occ:.4f}"},
-        {"Subsystem":"Anomaly Detection",  "Model":"Isolation Forest","Metric":"Power AUC","Value":"0.8749"},
+        {"Subsystem":"Anomaly Detection",  "Model":"Isolation Forest","Metric":"Power AUC","Value":"0.9088"},
         {"Subsystem":"Anomaly Detection",  "Model":"Isolation Forest","Metric":"Gas AUC",  "Value":"0.6833"},
     ])
     st.subheader("Results Summary")
