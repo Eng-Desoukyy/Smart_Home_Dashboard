@@ -1,4 +1,3 @@
-
 # ============================================================
 #  Smart Home ML Dashboard — Streamlit Application
 #  Alexandria University | ECE Graduation Project
@@ -325,9 +324,11 @@ elif page == "👤 Occupancy":
         line=dict(color="#ce93d8",width=1.5,dash="dash"), name="Model probability"))
     fig_tl.add_hline(y=0.5, line_dash="dot", line_color="#8890a4",
                      annotation_text="Decision threshold (0.5)")
-    fig_tl.update_layout(**PLOTLY_LAYOUT, height=320,
+    _yaxis_tl = {**PLOTLY_LAYOUT["yaxis"], "title": "Occupancy (0/1)", "range": [-0.05, 1.15]}
+    _layout_tl = {k: v for k, v in PLOTLY_LAYOUT.items() if k != "yaxis"}
+    fig_tl.update_layout(**_layout_tl, height=320,
         title=f"Actual vs Predicted Occupancy — Last {n_days} Days (15-min avg)",
-        yaxis_title="Occupancy (0/1)", yaxis=dict(range=[-0.05,1.15]))
+        yaxis=_yaxis_tl)
     st.plotly_chart(fig_tl, use_container_width=True)
 
 # ════════════════════════════════════════════════════════════════════
