@@ -128,7 +128,7 @@ df, POWER_THRESH, GAS_THRESH = compute_predictions(df_raw, models)
 with st.sidebar:
     st.markdown("## 🏠 Smart Home ML")
     st.markdown("**Alexandria University**")
-    st.markdown("ECE Graduation Project · 2024–2025")
+    st.markdown("ECE Graduation Project")
     st.divider()
 
     # FIX I: Dataset context moved to top of sidebar
