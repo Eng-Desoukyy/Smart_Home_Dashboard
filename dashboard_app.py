@@ -1,6 +1,7 @@
+
 # ============================================================
 #  Smart Home ML Dashboard — Streamlit Application
-#  Alexandria University | ECE Graduation Project 2024–2025
+#  Alexandria University | ECE Graduation Project
 #  Dataset: Oct–Dec 2024 (90 days, 1-min resolution)
 #  Run: streamlit run dashboard_app.py
 # ============================================================
