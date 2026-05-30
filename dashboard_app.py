@@ -1,4 +1,3 @@
-
 # ============================================================
 #  Smart Home ML Dashboard — Streamlit Application
 #  Alexandria University | ECE Graduation Project 2024–2025
